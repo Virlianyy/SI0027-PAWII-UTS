@@ -20,6 +20,45 @@ const MAX_LIMIT = 100;
 //   - data memuat kategoriId yang ter-populate (objek Kategori)
 exports.getAll = async (req, res) => {
   // TODO B1
+  const filter = {};
+  if (req.query.kategoriId) {
+    filter.kategoriId = req.query.kategoriId;
+  }
+  const total = await Buku.countDocuments(filter);
+
+  const page = parseInt(req.query.page, 10) || 1;
+  let limit = parseInt(req.query.limit, 10) || 10;
+  if (limit > MAX_LIMIT) {
+    limit = MAX_LIMIT;
+  }
+  const skip = (page - 1) * limit;
+
+  let query = Buku.find(filter)
+    .populate("kategoriId")
+    .skip(skip)
+    .limit(limit);
+
+    if (req.query.sort) {
+    const sortBy = req.query.sort.split(",").join(" ");
+    query = query.sort(sortBy);
+  } else {
+    query = query.sort("createdAt");
+  }
+
+  if (req.query.fields) {
+    const fields = req.query.fields.split(",").join(" ");
+    query = query.select(fields);
+  }
+
+  const data = await query;
+
+  res.status(200).json({
+    data,
+    page,
+    limit,
+    total,
+  });
+
 };
 
 // GET /buku/:id
@@ -28,6 +67,11 @@ exports.getAll = async (req, res) => {
 //   - format id salah -> 400 (ditangani errorHandler lewat CastError)
 exports.getById = async (req, res) => {
   // TODO B2
+  const buku = await Buku.findById(req.params.id).populate("kategoriId");
+  if (!buku) {
+    throw { status: 404, message: "Buku tidak ditemukan" };
+  }
+  res.status(200).json(buku);
 };
 
 // POST /buku
@@ -35,6 +79,8 @@ exports.getById = async (req, res) => {
 //   - validasi gagal / ISBN duplikat -> 400 (ditangani errorHandler)
 exports.create = async (req, res) => {
   // TODO B3
+  const buku = await Buku.create(req.body);
+  res.status(201).json(buku);
 };
 
 // PUT /buku/:id
@@ -43,6 +89,14 @@ exports.create = async (req, res) => {
 //   - tidak ada -> 404 { message }
 exports.update = async (req, res) => {
   // TODO B4
+  const buku = await Buku.findByIdAndUpdate(req.params.id, req.body, {
+    new: true,
+    runValidators: true,
+  });
+  if (!buku) {
+    throw { status: 404, message: "Buku tidak ditemukan" };
+  }
+  res.status(200).json(buku);
 };
 
 // DELETE /buku/:id
@@ -50,4 +104,9 @@ exports.update = async (req, res) => {
 //   - tidak ada -> 404 { message }
 exports.remove = async (req, res) => {
   // TODO B5
+  const buku = await Buku.findByIdAndDelete(req.params.id);
+  if (!buku) {
+    throw { status: 404, message: "Buku tidak ditemukan" };
+  }
+  res.status(204).send();
 };
