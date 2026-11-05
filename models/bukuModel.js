@@ -17,7 +17,63 @@
 const mongoose = require("mongoose");
 
 // TODO A1: buat schema subdocument penerbit
-// TODO A2: buat bukuSchema
-// TODO A3: export model dengan nama "Buku"
+const penerbitSchema = new mongoose.Schema(
+  {
+    nama: {
+      type: String,
+      required: [true, "Nama wajib diisi"],
+    },
+    tahun: {
+      type: Date,
+      min: [1990, "Tahun minimal 1990"],
+      max: [Date.now, "Tahun maksimal hingga tahun berjalan"],
+    },
+  },
+  { _id: false } // Menghilangkan _id otomatis untuk subdocument
+);
 
-module.exports = {};
+// TODO A2: buat bukuSchema
+const bukuSchema = new mongoose.Schema({
+  judul: {
+    type: String,
+    required: [true, "Judul wajib diisi"],
+    trim: true,
+  },
+  isbn: {
+    type: String,
+    required: [true, "Kode ISBN wajib diisi"],
+    unique: true,
+    match: [/^\d{13}$/, "Kode harus tepat 13 digit angka"],
+  },
+  penulis: {
+    type: [String],
+    validate: {
+      validator: function (val) {
+        return Array.isArray(val) && val.length >= 1;
+      },
+      message: "Minimal harus menyertakan 1 penulis",
+    },
+  },
+  penerbit: {
+    type: penerbitSchema,
+    required: [true, "Informasi gizi wajib diisi"],
+  },
+  kategoriId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Kategori",
+    required: [true, "kategoriId wajib diisi"],
+  },
+  stok: {
+    type: Number,
+      min: [0, "Protein tidak boleh negatif"],
+      default: 0,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+// TODO A3: export model dengan nama "Buku"
+const Buku = mongoose.model("Buku", bukuSchema);
+
+module.exports = Buku;
