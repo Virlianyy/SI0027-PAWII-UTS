@@ -19,7 +19,7 @@ router
   .route("/:id")
   .get(bukuController.getById)
   .put(bukuController.update)
-  .delete(menuController.remove);
+  .delete(bukuController.remove);
 
 module.exports = router;
 module.exports = router;
